@@ -1,0 +1,6 @@
+name: YandexCloudPulumi
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: The simple the state description on code
