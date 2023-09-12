@@ -6,6 +6,9 @@ import pulumi_yandex as yandex
 
 # Ubuntu 20
 ISOImage = 'fd808e721rc1vt7jkd0o'
+SSH_KEY = 'ssh-keys\\id_rsa.pub'
+METADATA = 'metadata_instances\\vm_user_metadata'
+
 
 network = yandex.VpcNetwork('network1')
 # Create a new subnet in the network
@@ -27,59 +30,70 @@ zone1 = yandex.DnsZone('zone1',
 )
 
 
-# Note: API don't recive the "_" character!
-vm_instance = yandex.ComputeInstance(
-    resource_name = 'resource-vm1',
-    name = 'name-vm1',
-    hostname = 'company-1',
-    zone = "ru-central1-a",
-    platform_id = "standard-v1",
+class CreateInstance():
 
-    boot_disk = yandex.ComputeInstanceBootDiskArgs(
-        auto_delete = True,
-        initialize_params = yandex.ComputeInstanceBootDiskInitializeParamsArgs(
-            image_id = ISOImage,
+    def __init__(self, vm_name):
+        self.ZONE = "ru-central1-a"
+        self.PLATFORM_ID = "standard-v1"
+        self.hostname = vm_name
+        self.resource_name = 'resource-vm1'
+        self.name = 'name-vm1'
+
+        # Note: API don't recive the "_" character!
+
+        self.vm_instance = yandex.ComputeInstance(
+            resource_name = self.resource_name,
+            name = self.name,
+            hostname = self.hostname,
+            zone = self.ZONE,
+            platform_id = self.PLATFORM_ID,
+
+        boot_disk = yandex.ComputeInstanceBootDiskArgs(
+            auto_delete = True,
+            initialize_params = yandex.ComputeInstanceBootDiskInitializeParamsArgs(
+                image_id = ISOImage,
+            ),
         ),
-    ),
 
-    metadata = {
-        'ssh-keys': '{}'.format(open('ssh-keys\\id_rsa.pub').read()),
-        'user-data': '{}'.format(open('metadata_instances\\vm_user_metadata').read()),
-    },
+        metadata = {
+            'ssh-keys': f'{open(SSH_KEY).read()}',
+            'user-data': f'{open(METADATA).read()}',
+        },
 
-    network_interfaces = [
-        yandex.ComputeInstanceNetworkInterfaceArgs(
-            nat = True,
-            ipv4 = True,
-            ipv6 = False,
-            subnet_id = subnet.id,
-            # dns_records = DnsRecordSet,
-        )
-    ],
+        network_interfaces = [
+            yandex.ComputeInstanceNetworkInterfaceArgs(
+                nat = True,
+                ipv4 = True,
+                ipv6 = False,
+                subnet_id = subnet.id,
+                # dns_records = DnsRecordSet,
+            )
+        ],
 
-    resources = yandex.ComputeInstanceResourcesArgs(
-        cores = 2,
-        memory = 4,
-    ),
-)
+        resources = yandex.ComputeInstanceResourcesArgs(
+            cores = 2,
+            memory = 4,
+        ),
+    )
 
-yandex.DnsRecordSet('rs1',
-    name = 'test-vm1',
-    zone_id = zone1.id,
-    type = "A",
-    ttl = 200,
-    datas = [vm_instance.network_interfaces[0]['nat_ip_address']]
-)
+    # yandex.DnsRecordSet('rs1',
+    #     name = 'test-vm1',
+    #     zone_id = zone1.id,
+    #     type = "A",
+    #     ttl = 200,
+    #     datas = [vm_instance.network_interfaces[0]['nat_ip_address']]
+    # )
 
 
 # For output
+print(dir(pulumi))
 pulumi.export('instanceName', vm_instance.name)
 pulumi.export('instanceHostname', vm_instance.hostname)
 pulumi.export('instanceId', vm_instance.id)
 pulumi.export('instanceFQDN', vm_instance.fqdn)
 pulumi.export('instanceCreated', vm_instance.created_at)
 pulumi.export('instanceMetadata', vm_instance.metadata)
-pulumi.export('instanceNetworkInterfaces', vm_instance.network_interfaces)
+# pulumi.export('instanceNetworkInterfaces', vm_instance.network_interfaces)
 pulumi.export('instanceNatIp', vm_instance.network_interfaces[0]['nat_ip_address'])
 print(dir(vm_instance))
 
