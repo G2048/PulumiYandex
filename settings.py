@@ -1,3 +1,8 @@
+from subprocess import getoutput
+YC_TOKEN = getoutput('yc iam create-token')
+YC_CLOUD_ID = getoutput('yc config get cloud-id')
+YC_FOLDER_ID = getoutput('yc config get folder-id')
+
 LogConfig = {
     'version': 1,
     'formatters': {
