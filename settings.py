@@ -1,7 +1,12 @@
 from subprocess import getoutput
-YC_TOKEN = getoutput('yc iam create-token')
-YC_CLOUD_ID = getoutput('yc config get cloud-id')
-YC_FOLDER_ID = getoutput('yc config get folder-id')
+from os import environ
+YC_TOKEN = environ.get('YC_TOKEN')
+YC_CLOUD_ID = environ.get('YC_CLOUD_ID')
+YC_FOLDER_ID = environ.get('YC_FOLDER_ID')
+
+# YC_TOKEN = getoutput('yc iam create-token')
+# YC_CLOUD_ID = getoutput('yc config get cloud-id')
+# YC_FOLDER_ID = getoutput('yc config get folder-id')
 
 LogConfig = {
     'version': 1,
