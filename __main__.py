@@ -14,6 +14,7 @@ ubuntu = Image(api).find_image('ubuntu-20').filds()
 ISOImage = ubuntu.id
 SSH_KEY = 'ssh-keys\\id_rsa.pub'
 METADATA = 'metadata_instances\\vm_user_metadata'
+DNS_ZONE = 'test-public-zone.ru.'
 
 
 class Network:
@@ -87,9 +88,11 @@ class Instance:
                 ),
             ),
 
+            # "metadata_dns_name": "${local.dns_name}.${data.yandex_dns_zone.dns_zone_company-164907.zone}"
             metadata={
                 'ssh-keys': f'{open(SSH_KEY).read()}',
                 'user-data': f'{open(METADATA).read()}',
+                'dns_name': f'{self.name}.' + DNS_ZONE,
             },
 
             network_interfaces=[
@@ -113,10 +116,11 @@ class Instance:
         )
         return self.vm_instance
 
-    def create_dns_record(self, dns_record, dns_zone):
+    def create_dns_record(self, dns_record, dns_zone_id):
         yandex.DnsRecordSet(dns_record,
-                            name=self.hostname,
-                            zone_id=dns_zone.id,
+                            name=dns_record,
+                            # name=record_name,
+                            zone_id=dns_zone_id,
                             type="A",
                             ttl=200,
                             datas=[self.vm_instance.network_interfaces[0]['nat_ip_address']],
@@ -140,8 +144,8 @@ def create_test_vms(num_machines, network):
         vm_name = 'test-vm' + str(index)
         instance = Instance(vm_name, network.subnet)
         vm_instance = instance.create(cores=2, memory=2)
-        dns_record = vm_name
-        # instance.create_dns_record(dns_record, dns_zone)
+        dns_record = vm_name #+ '.'
+        instance.create_dns_record(dns_record, dns_zone.id)
 
 
 num_machines = 2

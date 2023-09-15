@@ -7,7 +7,7 @@ import unittest
 
 from abc import ABC, abstractmethod
 from requests import exceptions
-from settings import LogConfig, YC_TOKEN
+from settings import LogConfig, YC_TOKEN, YC_CLOUD_ID, YC_FOLDER_ID
 
 logging.config.dictConfig(LogConfig)
 logger = logging.getLogger('')
@@ -18,6 +18,10 @@ class IApi(ABC):
 
     @abstractmethod
     def get_images(self):
+        pass
+
+    @abstractmethod
+    def get_instances(self):
         pass
 
 
@@ -37,7 +41,7 @@ class YandexApiFactory:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self,):
+    def __init__(self, ):
         pass
 
     @staticmethod
@@ -72,34 +76,11 @@ class YandexApi(IApi, YandexApiFactory):
         images = self._request(url=ready_url, params=PARAMS).get('images')
         return images
 
-
-class Image:
-
-    def __init__(self, IApi):
-        self.api = IApi
-
-    def find_image(self, pattern='ubuntu-20'):
-        images = self.api.get_images()
-
-        for image in images:
-            isoname = image.get('name')
-            if isinstance(isoname, str) and isoname.startswith(pattern):
-                self._image = image
-                break
-
-        return self
-
-    def filds(self,):
-        self.id = self._image.get('id')
-        self.name = self._image.get('name')
-        self.created = self._image.get('createdAt')
-        self.family = self._image.get('family')
-        self.mindisksize = self._image.get('minDiskSize')
-        self.pooled = self._image.get('pooled')
-        self.status = self._image.get('status')
-        self.storagesize = self._image.get('storageSize')
-
-        return self
+    def get_instances(self):
+        ready_url = f'{self.API_URL}compute/v1/instances'
+        PARAMS = {'folderId': YC_FOLDER_ID}
+        instances = self._request(url=ready_url, params=PARAMS).get('instances')
+        return instances
 
 
 if __name__ == '__main__':

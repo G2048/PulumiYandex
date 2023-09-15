@@ -2,7 +2,7 @@ import re
 import unittest
 from os import environ
 
-from cloud_api import YandexApi, Image
+from cloud_api import YandexApi
 
 
 class Test(unittest.TestCase):
@@ -21,16 +21,13 @@ class TestApi(unittest.TestCase):
         super().__init__(*args, **kwargs)
 
     def setUp(self):
-
         self.api = YandexApi()
-        self.images = self.api.get_images()
-
-
 
     def test_assert_is_instance(self):
         self.assertIsInstance(self.api, YandexApi)
 
     def test_get_resources(self):
+        self.images = self.api.get_images()
         self.assertGreater(len(self.images), 0)
         self.assertIsInstance(self.images, list)
         # __import__('pprint').pprint(self.images)
@@ -56,10 +53,11 @@ class TestApi(unittest.TestCase):
         #  'status': 'READY',
         #  'storageSize': '1665138688'}
         image_fields = ('createdAt', 'description', 'family',
-                       'folderId', 'id', 'minDiskSize', 'name',
-                       'os', 'pooled', 'productIds','status', 'storageSize'
-         )
+                        'folderId', 'id', 'minDiskSize', 'name',
+                        'os', 'pooled', 'productIds', 'status', 'storageSize'
+                        )
 
+        self.images = self.api.get_images()
         for image in self.images:
             self.assertIsInstance(image, dict)
 
@@ -88,17 +86,12 @@ class TestApi(unittest.TestCase):
         self.assertRegex(ubuntu_image, pattern)
         print(f'{ubuntu_image=}')
 
-    def test_get_ubuntu_image(self):
-        image = Image(YandexApi())
-        ubuntu = image.find_image('ubuntu-20').filds()
-        self.assertIsInstance(ubuntu._image, dict)
-        # ubuntu.filds()
-
-        self.assertIsNotNone(ubuntu.id)
-        self.assertIsNotNone(ubuntu.name)
-        self.assertIsNotNone(ubuntu.status)
-        print(ubuntu.name)
-        print(ubuntu.id)
+    def test_instances(self):
+        instances = self.api.get_instances()
+        self.assertIsNotNone(instances)
+        self.assertIsInstance(instances, list)
+        self.assertGreater(len(instances), 0)
+        print(instances)
 
 
 if __name__ == '__main__':
