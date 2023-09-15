@@ -89,10 +89,10 @@ class TestApi(unittest.TestCase):
         print(f'{ubuntu_image=}')
 
     def test_get_ubuntu_image(self):
-        image = Image(YandexApi)
-        ubuntu = image.find_image('ubuntu-20')
+        image = Image(YandexApi())
+        ubuntu = image.find_image('ubuntu-20').filds()
         self.assertIsInstance(ubuntu._image, dict)
-        ubuntu.filds()
+        # ubuntu.filds()
 
         self.assertIsNotNone(ubuntu.id)
         self.assertIsNotNone(ubuntu.name)

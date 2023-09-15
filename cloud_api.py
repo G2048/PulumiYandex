@@ -11,6 +11,7 @@ from settings import LogConfig, YC_TOKEN
 
 logging.config.dictConfig(LogConfig)
 logger = logging.getLogger('')
+logger.setLevel(20)
 
 
 class IApi(ABC):
@@ -36,7 +37,7 @@ class YandexApiFactory:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self, ):
+    def __init__(self,):
         pass
 
     @staticmethod
@@ -75,7 +76,7 @@ class YandexApi(IApi, YandexApiFactory):
 class Image:
 
     def __init__(self, IApi):
-        self.api = IApi()
+        self.api = IApi
 
     def find_image(self, pattern='ubuntu-20'):
         images = self.api.get_images()
@@ -97,6 +98,8 @@ class Image:
         self.pooled = self._image.get('pooled')
         self.status = self._image.get('status')
         self.storagesize = self._image.get('storageSize')
+
+        return self
 
 
 if __name__ == '__main__':
