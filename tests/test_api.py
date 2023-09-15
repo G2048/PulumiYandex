@@ -1,15 +1,31 @@
-import unittest
 import re
-from cloud_api import YandexApi
+import unittest
+from os import environ
+
+from cloud_api import YandexApi, Image
+
+
+class Test(unittest.TestCase):
+    def test_environ_vars(self):
+        YC_TOKEN = environ.get('YC_TOKEN')
+        YC_CLOUD_ID = environ.get('YC_CLOUD_ID')
+        YC_FOLDER_ID = environ.get('YC_FOLDER_ID')
+        self.assertIsNotNone(YC_TOKEN)
+        self.assertIsNotNone(YC_CLOUD_ID)
+        self.assertIsNotNone(YC_FOLDER_ID)
 
 
 class TestApi(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
-    # def setUp(self):
+        super().__init__(*args, **kwargs)
+
+    def setUp(self):
+
         self.api = YandexApi()
         self.images = self.api.get_images()
-        super().__init__(*args, **kwargs)
+
+
 
     def test_assert_is_instance(self):
         self.assertIsInstance(self.api, YandexApi)
@@ -55,7 +71,7 @@ class TestApi(unittest.TestCase):
                 elif parametr == 'productIds':
                     self.assertIsInstance(value, list)
 
-    @unittest.expectedFailure
+    # @unittest.expectedFailure
     def test_find_image(self):
         image = 'ubuntu-20'
         pattern = 'ubuntu\s*-+\s*20'
@@ -65,8 +81,25 @@ class TestApi(unittest.TestCase):
         for image in responce:
             isoname = image.get('name')
             print(f'{isoname=}')
-            self.assertNotRegex(isoname, pattern)
+            if re.search(pattern, isoname):
+                break
+
+        ubuntu_image = image.get('name')
+        self.assertRegex(ubuntu_image, pattern)
+        print(f'{ubuntu_image=}')
+
+    def test_get_ubuntu_image(self):
+        image = Image(YandexApi)
+        ubuntu = image.find_image('ubuntu-20')
+        self.assertIsInstance(ubuntu._image, dict)
+        ubuntu.filds()
+
+        self.assertIsNotNone(ubuntu.id)
+        self.assertIsNotNone(ubuntu.name)
+        self.assertIsNotNone(ubuntu.status)
+        print(ubuntu.name)
+        print(ubuntu.id)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(failfast=True)

@@ -1,3 +1,4 @@
+import re
 import os
 import json
 import requests
@@ -30,11 +31,12 @@ class YandexApiFactory:
     IAM_TOKEN = YC_TOKEN
     HEADERS = {'Authorization': f'Bearer {IAM_TOKEN}'}
 
-    def __new__(cls,):
+    def __new__(cls, ):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
         return cls.__instance
-    def __init__(self,):
+
+    def __init__(self, ):
         pass
 
     @staticmethod
@@ -59,18 +61,46 @@ class YandexApiFactory:
 
 
 class YandexApi(IApi, YandexApiFactory):
-    def __init__(self,):
+    def __init__(self, ):
         super().__init__()
 
     # "https://compute.api.cloud.yandex.net/compute/v1/images?folderId=standard-images&pageSize=1000"
-    def get_images(self, *, imagestype='standard-images', pagesize='100'):
+    def get_images(self, *, imagestype='standard-images', pagesize='100') -> list:
         PARAMS = {'folderId': imagestype, 'pageSize': pagesize}
         ready_url = f'{self.API_URL}compute/v1/images'
         images = self._request(url=ready_url, params=PARAMS).get('images')
         return images
 
 
+class Image:
+
+    def __init__(self, IApi):
+        self.api = IApi()
+
+    def find_image(self, pattern='ubuntu-20'):
+        images = self.api.get_images()
+
+        for image in images:
+            isoname = image.get('name')
+            if isinstance(isoname, str) and isoname.startswith(pattern):
+                self._image = image
+                break
+
+        return self
+
+    def filds(self,):
+        self.id = self._image.get('id')
+        self.name = self._image.get('name')
+        self.created = self._image.get('createdAt')
+        self.family = self._image.get('family')
+        self.mindisksize = self._image.get('minDiskSize')
+        self.pooled = self._image.get('pooled')
+        self.status = self._image.get('status')
+        self.storagesize = self._image.get('storageSize')
+
+
 if __name__ == '__main__':
-    pass
+    api = YandexApi()
+    api.get_images()
     # resources = ResourcesAPI(api=YandexAPI)
     # resources.api.get_images()

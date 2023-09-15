@@ -1,11 +1,12 @@
 import pulumi
 import pulumi_yandex as yandex
+from cloud_api import Image, YandexApi
 
 ## For more see:
 # https://www.pulumi.com/registry/packages/yandex/api-docs/computeinstance/
 
-# Ubuntu 20
-ISOImage = 'fd808e721rc1vt7jkd0o'
+ubuntu = Image(YandexApi).find_image('ubuntu-20')
+ISOImage = ubuntu.id
 SSH_KEY = 'ssh-keys\\id_rsa.pub'
 METADATA = 'metadata_instances\\vm_user_metadata'
 
