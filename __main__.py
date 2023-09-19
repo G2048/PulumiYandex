@@ -1,6 +1,7 @@
 import pulumi
 import pulumi_yandex as yandex
-from cloud_api import Image, YandexApi
+from cloud_managment.cloud_api import YandexApi
+from cloud_managment.cloud_info import InfoImage
 
 ## For more see:
 # https://www.pulumi.com/registry/packages/yandex/api-docs/computeinstance/
@@ -9,12 +10,11 @@ from cloud_api import Image, YandexApi
 # pulumi up -s dev -y
 
 api = YandexApi()
-ubuntu = Image(api).find_image('ubuntu-20').filds()
+ubuntu = InfoImage(api).find_image('ubuntu-20').filds()
 
 ISOImage = ubuntu.id
 SSH_KEY = 'ssh-keys\\id_rsa.pub'
-METADATA = 'metadata_instances\\vm_user_metadata'
-DNS_ZONE = 'test-public-zone.ru.'
+USER_METADATA = 'metadata_instances\\vm_user_metadata'
 
 
 class Network:
@@ -32,23 +32,28 @@ class Network:
                                        v4_cidr_blocks=self.v4_cidr_blocks,
                                        )
 
+    # Something wrong with the DNS zone_name .... But I can't found another beautiful way
     def create_dns(self, name='zone1', zone_name='test-public-zone.ru.', public=True):
         # Field must match the pattern /[.]|[a-z0-9][-a-z0-9.]*\./
-        self.zone = yandex.DnsZone(name,
-                              description="DNS Zone Description",
-                              labels={
-                                  'label1': 'label-1-value',
-                              },
-                              zone=zone_name,
-                              public=public,
-                              private_networks=[self.network.id],
-                              )
-        return self.zone
+        self.dns_zone = yandex.DnsZone(name,
+                                   description="DNS Zone Description",
+                                   labels={
+                                       'label1': 'label-1-value',
+                                   },
+                                   zone=zone_name,
+                                   public=public,
+                                   private_networks=[self.network.id],
+                                   )
+        return self.dns_zone
+
     @staticmethod
-    def print_dns(zone_id):
-        dns = yandex.get_dns_zone(dns_zone_id=zone_id)
-        pulumi.export("id", dns.id)
-        pulumi.export("zone", dns.zone)
+    def print_dns(dns_zone):
+        #     zone         : "test-public-zone.ru."
+        #     zone name    : "zone1-22e2d85"
+        # dns = yandex.get_dns_zone(dns_zone_id=zone_id)
+        pulumi.export("id", dns_zone.id)
+        pulumi.export("zone", dns_zone.zone)
+        pulumi.export("zone name", dns_zone.name)
 
 
 class Instance:
@@ -68,11 +73,18 @@ class Instance:
         self.name = vm_name
         self.resource_name = vm_name
         self.subnet = subnet
+        self.METADATA = {}
         # self.resource_name = 'resource-vm1'
         # self.name = 'name-vm1'
 
+    def fill_metadata_instances(self, ssh_key: str, vm_metadata: str, dns_zone: str = ''):
+        self.METADATA = {
+            'ssh-keys': f'{open(ssh_key).read()}',
+            'user-data': f'{open(vm_metadata).read()}',
+            'dns_name': f'{self.name}.{str(dns_zone)}',
+        }
 
-    def create(self, cores, memory):
+    def create(self, cores: int, memory: int, *, core_fraction: int = 5):
         self.vm_instance = yandex.ComputeInstance(
             resource_name=self.resource_name,
             name=self.name,
@@ -89,11 +101,7 @@ class Instance:
             ),
 
             # "metadata_dns_name": "${local.dns_name}.${data.yandex_dns_zone.dns_zone_company-164907.zone}"
-            metadata={
-                'ssh-keys': f'{open(SSH_KEY).read()}',
-                'user-data': f'{open(METADATA).read()}',
-                'dns_name': f'{self.name}.' + DNS_ZONE,
-            },
+            metadata=self.METADATA,
 
             network_interfaces=[
                 yandex.ComputeInstanceNetworkInterfaceArgs(
@@ -111,7 +119,7 @@ class Instance:
             resources=yandex.ComputeInstanceResourcesArgs(
                 cores=cores,
                 memory=memory,
-                core_fraction=5,
+                core_fraction=core_fraction,
             ),
         )
         return self.vm_instance
@@ -138,13 +146,22 @@ class Instance:
         # pulumi.export('instanceNetworkInterfaces', vm_instance.network_interfaces)
         pulumi.export('instanceNatIp', vm_instance.network_interfaces[0]['nat_ip_address'])
 
-
 def create_test_vms(num_machines, network):
+    dns_zone_name = str(network.dns_zone.zone)
+    # test-vm2.Calling __str__ on an Output[T] is not supported.
+    #
+    # To get the value of an Output[T] as an Output[str] consider:
+    # 1. o.apply(lambda v: f"prefix{v}suffix")
+    #
+    # See https://www.pulumi.com/docs/concepts/inputs-outputs for more details.
+    # This function may throw in a future version of Pulumi.
+    pulumi.export('dns_zone_name', dns_zone_name)
     for index in range(1, num_machines + 1):
         vm_name = 'test-vm' + str(index)
         instance = Instance(vm_name, network.subnet)
+        instance.fill_metadata_instances(ssh_key=SSH_KEY, vm_metadata=USER_METADATA, dns_zone=dns_zone_name)
         vm_instance = instance.create(cores=2, memory=2)
-        dns_record = vm_name #+ '.'
+        dns_record = vm_name  # + '.'
         instance.create_dns_record(dns_record, dns_zone.id)
 
 
@@ -152,8 +169,8 @@ num_machines = 2
 network = Network()
 network.create()
 dns_zone = network.create_dns()
-network.print_dns(dns_zone.id)
 create_test_vms(num_machines, network)
+network.print_dns(dns_zone)
 
 # print(dir(vm_instance))
 # print(dir(pulumi))
