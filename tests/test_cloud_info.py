@@ -1,12 +1,11 @@
 import unittest
-from cloud_api import YandexApi
-from cloud_info import InfoInstance, InfoImage
+from cloud_managment.cloud_api import YandexApi
+from cloud_managment.cloud_info import InfoInstance, InfoImage
 
 
 class TestCloudInfo(unittest.TestCase):
 
     # def setUp(self):
-
     def test_get_ubuntu_image(self):
         image = InfoImage(YandexApi())
         ubuntu = image.find_image('ubuntu-20').filds()

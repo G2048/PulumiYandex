@@ -2,7 +2,7 @@ import re
 import unittest
 from os import environ
 
-from cloud_api import YandexApi
+from cloud_managment.cloud_api import YandexApi
 
 
 class Test(unittest.TestCase):
@@ -89,8 +89,8 @@ class TestApi(unittest.TestCase):
     def test_instances(self):
         instances = self.api.get_instances()
         self.assertIsNotNone(instances)
+        self.assertGreater(len(instances), 1)
         self.assertIsInstance(instances, list)
-        self.assertGreater(len(instances), 0)
         print(instances)
 
 

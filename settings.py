@@ -1,5 +1,6 @@
 from subprocess import getoutput
 from os import environ
+
 YC_TOKEN = environ.get('YC_TOKEN')
 YC_CLOUD_ID = environ.get('YC_CLOUD_ID')
 YC_FOLDER_ID = environ.get('YC_FOLDER_ID')
@@ -38,5 +39,9 @@ LogConfig = {
             'level': 'NOTSET',
             'handlers': ['rotate', 'console'],
         },
+        'consolemode': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        }
     }
 }

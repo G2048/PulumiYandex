@@ -76,7 +76,7 @@ class YandexApi(IApi, YandexApiFactory):
         images = self._request(url=ready_url, params=PARAMS).get('images')
         return images
 
-    def get_instances(self):
+    def get_instances(self) -> list:
         ready_url = f'{self.API_URL}compute/v1/instances'
         PARAMS = {'folderId': YC_FOLDER_ID}
         instances = self._request(url=ready_url, params=PARAMS).get('instances')
